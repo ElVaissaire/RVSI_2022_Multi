@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2409267243217770367}
   - component: {fileID: 4236276593213467397}
   - component: {fileID: 6810183497126046148}
-  - component: {fileID: -4111529069070115365}
+  - component: {fileID: 9017850430022589682}
   m_Layer: 0
   m_Name: PlayerTest
   m_TagString: Untagged
@@ -114,6 +114,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_speed: 5
+  m_position:
+    m_InternalValue: {x: 0, y: 0, z: 0}
+  m_positionClientAvant: {x: 0, y: 0, z: 0}
+  m_positionClientApres: {x: 0, y: 0, z: 0}
 --- !u!114 &6810183497126046148
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -130,7 +134,7 @@ MonoBehaviour:
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &-4111529069070115365
+--- !u!114 &9017850430022589682
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -143,7 +147,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SyncPositionX: 1
-  SyncPositionY: 0
+  SyncPositionY: 1
   SyncPositionZ: 1
   SyncRotAngleX: 0
   SyncRotAngleY: 0

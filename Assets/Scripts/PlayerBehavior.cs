@@ -1,85 +1,51 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using Unity.Netcode;
 using UnityEngine;
 
 public class PlayerBehavior : NetworkBehaviour
 {
-    [SerializeField] private int        m_speed;
-    [SerializeField] private NetworkVariable<Vector3>    m_position;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    /*
-    public override void OnNetworkSpawn()
-    {
-        if (!IsOwner)
-            Destroy(this);
-    }
-    */
+    [SerializeField] private int        m_speed = 5;
+    [SerializeField] private Vector3    m_deplacement;
 
     // Update is called once per frame
     void Update()
     {
         if(IsOwner)
         {
-                PlayerControl();
-        }
-        
-
-        /*
-        if (IsOwner)
-        {
-            PlayerControl();
-
-            if (NetworkManager.Singleton.IsServer)
+            m_deplacement = GetDeplacement();
+            if (IsClient && !IsServer)
             {
-                m_position.Value = NetworkManager.Singleton.LocalClient.PlayerObject.transform.position;
-                SetPositionServerRpc();
+                EnvoiePositionClientAuServeurServerRpc(m_deplacement);
             }
             else
-                SetPositionClientRpc();
+            {
+                transform.Translate(m_deplacement);
+            }
         }
-        else
-            NetworkManager.Singleton.LocalClient.PlayerObject.transform.position = m_position.Value;//*/
     }
-
-
-    /*[ServerRpc]
-    void SetPositionServerRpc(ServerRpcParams rpcParams = default)
+    [ServerRpc]
+    void EnvoiePositionClientAuServeurServerRpc(Vector3 p_position)
     {
-        m_position.Value = NetworkManager.Singleton.LocalClient.PlayerObject.transform.position;
+        transform.Translate(p_position);
     }
-
-    [ClientRpc]
-    void SetPositionClientRpc(ClientRpcParams rpcParams = default)
+    Vector3 GetDeplacement()
     {
-        m_position.Value = NetworkManager.Singleton.LocalClient.PlayerObject.transform.position;
-    }*/
-
-
-    void PlayerControl()
-    {
-        if(Input.GetKey(KeyCode.UpArrow))
+        Vector3 pos = Vector3.zero;
+        if (Input.GetKey(KeyCode.UpArrow))
         {
-            transform.Translate(Vector3.forward * m_speed * Time.deltaTime);
+            pos += Vector3.forward * m_speed * Time.deltaTime;
         }
         if (Input.GetKey(KeyCode.DownArrow))
         {
-            transform.Translate(Vector3.back * m_speed * Time.deltaTime);
+            pos += Vector3.back * m_speed * Time.deltaTime;
         }
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            transform.Translate(Vector3.left * m_speed * Time.deltaTime);
+            pos += Vector3.left * m_speed * Time.deltaTime;
         }
         if (Input.GetKey(KeyCode.RightArrow))
         {
-            transform.Translate(Vector3.right * m_speed * Time.deltaTime);
+            pos += Vector3.right * m_speed * Time.deltaTime;
         }
+        return pos;
     }
 }
