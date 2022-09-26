@@ -1,15 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 
 public class BouleNeige : NetworkBehaviour
 {
-    [SerializeField] public float       m_vitesseBouleNeige;
+    [SerializeField] private float      m_vitesseBouleNeige;
+    public NetworkVariable<Vector3>     PositionBouleNeige = new NetworkVariable<Vector3>();
 
-    [SerializeField] public Vector3     m_direction;
+    public int m_id;
 
-    public NetworkVariable<Vector3> PositionBouleNeige = new NetworkVariable<Vector3>();
+    private void Start()
+    {
+        print("IdBouleNeige = " + m_id);
+    }
 
     void Update()
     {
@@ -18,15 +20,17 @@ public class BouleNeige : NetworkBehaviour
 
     void DeplacementBouleNeige()
     {
-        transform.Translate(m_direction * Time.deltaTime * m_vitesseBouleNeige);
+        transform.Translate(Vector3.forward * Time.deltaTime * m_vitesseBouleNeige);
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.tag == "Player")
+        if (!IsServer)
+            return;
+
+        if (collision.gameObject.tag == "Player" && m_id != collision.gameObject.GetComponent<PlayerBehavior>().m_ID)
         {
-            //print("Player");
-            PlayerBehavior.player_S.m_score -= 10;     
+            collision.gameObject.GetComponent<PlayerBehavior>().m_vie -= 10;
             Destroy(this.gameObject);
         }
 

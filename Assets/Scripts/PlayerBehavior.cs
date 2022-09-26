@@ -3,20 +3,42 @@ using UnityEngine;
 
 public class PlayerBehavior : NetworkBehaviour
 {
-    public static PlayerBehavior player_S;
 
     [SerializeField] private int        m_vitesse = 5;
     [SerializeField] private Vector3    m_direction;
     [SerializeField] private Vector3    m_directionTmp;
 
-    [SerializeField] public BouleNeige  m_bouleNeige;
-    [SerializeField] private bool       m_PouvoirTirer = true;
+    [SerializeField] private GameObject m_snowballPrefab;
+    [SerializeField] private Transform  m_snowballSpawn;
 
-    [SerializeField] public int         m_score = 100;
+    [SerializeField] public int         m_vie = 100;
+
+    private NetworkVariable<int>        m_networkID = new NetworkVariable<int>();
+    public int                          m_ID = -1;
 
     private void Awake()
     {
-        player_S = this;
+        m_ID = -1;
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer)
+        {
+            m_ID = GameManager.Instance.AddPlayer(gameObject);
+            m_networkID.Value = m_ID;
+        }
+        else
+        {
+            m_ID = m_networkID.Value;
+            GetComponent<MeshRenderer>().material.color = GameManager.Instance.GetColorByID(m_ID);
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if(IsOwner)
+            GameManager.Instance.DeletePlayer(m_ID);
     }
 
     void Update()
@@ -38,6 +60,7 @@ public class PlayerBehavior : NetworkBehaviour
 
             LancerBouleNeige();
         }
+
     }
     
     [ServerRpc]
@@ -71,27 +94,15 @@ public class PlayerBehavior : NetworkBehaviour
 
     void LancerBouleNeige()
     {
-        if (Input.GetKey(KeyCode.Space) && m_PouvoirTirer && m_direction != Vector3.zero)
-        {
-            m_PouvoirTirer = false;
-            Vector3 position = new Vector3(transform.position.x + (m_direction.x * 30f), 0, transform.position.z + (m_direction.z * 30f));
-
-            InstancierBouleNeigeServerRpc(position, m_direction, m_vitesse*100);    // On laisse le serveur instancier la boule de neige
-        }
         if (Input.GetKeyDown(KeyCode.Space))
-        {
-            m_PouvoirTirer = true;
-        }
+            InstancierBouleNeigeServerRpc(m_snowballSpawn.position, transform.rotation);    // On laisse le serveur instancier la boule de neige
     }
 
     [ServerRpc]
-    void InstancierBouleNeigeServerRpc(Vector3 p_position, Vector3 p_direction, float p_vitesse)
+    void InstancierBouleNeigeServerRpc(Vector3 p_position, Quaternion p_rotation)
     {
-        m_bouleNeige.transform.position = p_position;
-        m_bouleNeige.m_vitesseBouleNeige = p_vitesse;
-        m_bouleNeige.m_direction = p_direction;
-        
-        BouleNeige bouleNeige = Instantiate(m_bouleNeige);
-        bouleNeige.GetComponent<NetworkObject>().Spawn();   // Mettre l'instance de boule de neige sur le serveur pour que le client puisse la voir
+        GameObject snowball = Instantiate(m_snowballPrefab, p_position, p_rotation, null);
+        snowball.GetComponent<BouleNeige>().m_id = m_ID;
+        snowball.GetComponent<NetworkObject>().Spawn();   // Mettre l'instance de boule de neige sur le serveur pour que le client puisse la voir
     }
 }

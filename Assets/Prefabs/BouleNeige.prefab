@@ -31,7 +31,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4497884170156552806}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.27215025, y: 0, z: 2.6700974}
+  m_LocalPosition: {x: -0.000002811482, y: 0, z: -2.508702}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -113,8 +113,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 531780f262815d44f93551d34ee5bad7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_vitesseBouleNeige: 500
-  m_direction: {x: 0, y: 0, z: 0.049103}
+  m_vitesseBouleNeige: 15
+  m_direction: {x: 0, y: 0, z: 1}
   PositionBouleNeige:
     m_InternalValue: {x: 0, y: 0, z: 0}
 --- !u!114 &2673661556642714337
