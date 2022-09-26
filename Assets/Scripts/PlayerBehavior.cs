@@ -9,9 +9,10 @@ public class PlayerBehavior : NetworkBehaviour
     [SerializeField] private int        m_vitesse = 5;
     [SerializeField] private int        m_rotSpeed;
     [SerializeField] private Vector3    m_direction;
-    [SerializeField] private Vector3    m_directionTmp;
     [SerializeField] private Vector3    m_rotation;
     [SerializeField] private Vector3    m_rotCam;
+    public NetworkVariable<Vector3>     m_networkRotCam;
+    public NetworkVariable<Quaternion>  m_networkRotationCam;
 
     [SerializeField] private GameObject m_snowballPrefab;
     [SerializeField] private Transform  m_snowballSpawn;
@@ -72,44 +73,29 @@ public class PlayerBehavior : NetworkBehaviour
 
     void Update()
     {
-        //print(m_cam.transform.rotation);
         if(IsOwner)
         {
-            m_directionTmp = GetDirection();
-            m_rotation = GetRotation();
-            m_rotCam = GetRotCam();
-            //if (m_directionTmp != Vector3.zero)
-            //{
-            m_direction = m_directionTmp;
+            m_direction = GetDirection();
+            m_rotation = GetRotationPersonnage();
+            m_rotCam = GetRotationCamera();
 
-            if (IsClient && !IsServer)
+            if (IsServer)
             {
-                EnvoiePositionRotationClientAuServeurServerRpc(m_direction * m_vitesse * Time.deltaTime, m_rotation, m_rotCam); //m_direction
+                transform.Translate(m_direction * m_vitesse * Time.deltaTime);
+                transform.Rotate(m_rotation);
+
+                // Autoriser la rotation entre 330° et 45°
+                if ((0.0f <= m_cam.transform.eulerAngles.x && m_cam.transform.eulerAngles.x < (45.0f - m_rotCam.x) ) || 
+                    (((330.0f - m_rotCam.x) < m_cam.transform.eulerAngles.x && m_cam.transform.eulerAngles.x <= 360.0f)))
+                {
+                    m_cam.transform.Rotate(m_rotCam);
+                }
+                
+                m_networkRotationCam.Value = m_cam.transform.rotation;
             }
             else
             {
-                transform.Translate(m_direction * m_vitesse * Time.deltaTime);
-                //transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(m_rotation/*m_direction*/), 0.3f);
-                transform.Rotate(m_rotation);
-                //if (m_cam.transform.rotation.x <= 0.25 && m_cam.transform.rotation.x >= -0.1)
-                m_cam.transform.Rotate(m_rotCam);
-                print(m_cam.transform.eulerAngles.x);
-
-                /*if (45.0f < m_cam.transform.eulerAngles.x && m_cam.transform.eulerAngles.x < 180.0f)
-                    m_cam.transform.eulerAngles = new Vector3(45.0f, 0.0f, 0.0f);
-                
-                if (180.0f < m_cam.transform.eulerAngles.x && m_cam.transform.eulerAngles.x < 330.0f)
-                    m_cam.transform.eulerAngles = new Vector3(330.0f, 0.0f, 0.0f);*/
-                /*
-                if (m_cam.transform.eulerAngles.x < -45.0f)
-                    m_cam.transform.eulerAngles = new Vector3(-45.0f, 0.0f, 0.0f);
-
-                if (m_cam.transform.eulerAngles.x > 45.0f)
-                    m_cam.transform.eulerAngles = new Vector3(45.0f, 0.0f, 0.0f);//*/
-
-                //else if(m_cam.transform.rotation.x > 0.25 && m_cam.transform.rotation.x < 0)
-                //    m_cam.transform.Rotate(m_rotCam);
-                //else if (m_cam.transform.rotation.eulerAngles.x < -0.1 && m_cam.transform.rotation.eulerAngles.x < -0.1) 
+                EnvoiePositionRotationClientAuServeurServerRpc(m_direction * m_vitesse * Time.deltaTime, m_rotation, m_rotCam); //m_direction
             }
 
             LancerBouleNeige();
@@ -117,7 +103,7 @@ public class PlayerBehavior : NetworkBehaviour
 
         m_vie = m_networkVie.Value;
         m_healthBar.value = m_vie;
-
+        m_cam.transform.rotation = m_networkRotationCam.Value;
     }
     
     [ServerRpc]
@@ -126,17 +112,17 @@ public class PlayerBehavior : NetworkBehaviour
         transform.Translate(p_direction);
         //transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(p_rotation), 0.3f);
         transform.Rotate(p_rotation);
-        m_cam.transform.Rotate(p_rotCam);
+        //m_cam.transform.Rotate(p_rotCam);
     }
 
-    Vector3 GetRotCam()
+    Vector3 GetRotationCamera()     // Tourner uniquement la caméra pour regarder de haut en bas
     {
         float axisY = Input.GetAxis("Mouse Y");
         Vector3 rotation = new Vector3(-axisY * Time.deltaTime * m_rotSpeed, 0, 0);
         return rotation;
     }
 
-    Vector3 GetRotation()
+    Vector3 GetRotationPersonnage()     // Tourner le personnage autour de l'axe y pour regarder sur les côtes
     {
         Vector3 rotation = new Vector3(0, Input.GetAxis("Mouse X") * Time.deltaTime * m_rotSpeed, 0);
         return rotation;

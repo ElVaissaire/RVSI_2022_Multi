@@ -8,11 +8,6 @@ public class BouleNeige : NetworkBehaviour
 
     public int m_id;
 
-    private void Start()
-    {
-        print("IdBouleNeige = " + m_id);
-    }
-
     void Update()
     {
         DeplacementBouleNeige();
