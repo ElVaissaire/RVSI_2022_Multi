@@ -1,13 +1,17 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class PlayerBehavior : NetworkBehaviour
 {
 
     [SerializeField] private int        m_vitesse = 5;
+    [SerializeField] private int        m_rotSpeed;
     [SerializeField] private Vector3    m_direction;
     [SerializeField] private Vector3    m_directionTmp;
+    [SerializeField] private Vector3    m_rotation;
+    [SerializeField] private Vector3    m_rotCam;
 
     [SerializeField] private GameObject m_snowballPrefab;
     [SerializeField] private Transform  m_snowballSpawn;
@@ -22,11 +26,18 @@ public class PlayerBehavior : NetworkBehaviour
 
     [SerializeField] private GameObject m_cam;
 
+    [SerializeField] public TextMeshProUGUI m_text;
+    //public NetworkVariable<string> m_networkText = new NetworkVariable<string>();
+
     private void Awake()
     {
         m_ID = -1;
         m_healthBar.maxValue = m_maxVie;
         m_vie = m_maxVie;
+        //m_text.text = "Player";
+        m_text.SetText("Player");
+        m_text.fontSize = 5;
+        print("Awake " + m_text.text);
     }
 
     public override void OnNetworkSpawn()
@@ -36,12 +47,17 @@ public class PlayerBehavior : NetworkBehaviour
             m_ID = GameManager.Instance.AddPlayer(gameObject);
             m_networkID.Value = m_ID;
             m_networkVie.Value = m_maxVie;
+            //m_text.text = "Player" + m_ID.ToString();
+            //m_text.fontSize = 5;
+
+            print("OnNetworkSpawn " + m_text.text);
         }
         else
         {
             m_ID = m_networkID.Value;
             m_maxVie = m_networkVie.Value;
             GetComponent<MeshRenderer>().material.color = GameManager.Instance.GetColorByID(m_ID);
+            //m_text.text = "Player";
         }
 
         if (!IsOwner)
@@ -56,19 +72,44 @@ public class PlayerBehavior : NetworkBehaviour
 
     void Update()
     {
+        //print(m_cam.transform.rotation);
         if(IsOwner)
         {
             m_directionTmp = GetDirection();
-            if (m_directionTmp != Vector3.zero)
+            m_rotation = GetRotation();
+            m_rotCam = GetRotCam();
+            //if (m_directionTmp != Vector3.zero)
+            //{
+            m_direction = m_directionTmp;
+
+            if (IsClient && !IsServer)
             {
-                m_direction = m_directionTmp;
-                if (IsClient && !IsServer)
-                    EnvoiePositionRotationClientAuServeurServerRpc(Vector3.forward * m_vitesse * Time.deltaTime, m_direction);
-                else
-                {
-                    transform.Translate(Vector3.forward * m_vitesse * Time.deltaTime); 
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(m_direction), 0.3f);
-                }
+                EnvoiePositionRotationClientAuServeurServerRpc(m_direction * m_vitesse * Time.deltaTime, m_rotation, m_rotCam); //m_direction
+            }
+            else
+            {
+                transform.Translate(m_direction * m_vitesse * Time.deltaTime);
+                //transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(m_rotation/*m_direction*/), 0.3f);
+                transform.Rotate(m_rotation);
+                //if (m_cam.transform.rotation.x <= 0.25 && m_cam.transform.rotation.x >= -0.1)
+                m_cam.transform.Rotate(m_rotCam);
+                print(m_cam.transform.eulerAngles.x);
+
+                /*if (45.0f < m_cam.transform.eulerAngles.x && m_cam.transform.eulerAngles.x < 180.0f)
+                    m_cam.transform.eulerAngles = new Vector3(45.0f, 0.0f, 0.0f);
+                
+                if (180.0f < m_cam.transform.eulerAngles.x && m_cam.transform.eulerAngles.x < 330.0f)
+                    m_cam.transform.eulerAngles = new Vector3(330.0f, 0.0f, 0.0f);*/
+                /*
+                if (m_cam.transform.eulerAngles.x < -45.0f)
+                    m_cam.transform.eulerAngles = new Vector3(-45.0f, 0.0f, 0.0f);
+
+                if (m_cam.transform.eulerAngles.x > 45.0f)
+                    m_cam.transform.eulerAngles = new Vector3(45.0f, 0.0f, 0.0f);//*/
+
+                //else if(m_cam.transform.rotation.x > 0.25 && m_cam.transform.rotation.x < 0)
+                //    m_cam.transform.Rotate(m_rotCam);
+                //else if (m_cam.transform.rotation.eulerAngles.x < -0.1 && m_cam.transform.rotation.eulerAngles.x < -0.1) 
             }
 
             LancerBouleNeige();
@@ -80,10 +121,25 @@ public class PlayerBehavior : NetworkBehaviour
     }
     
     [ServerRpc]
-    void EnvoiePositionRotationClientAuServeurServerRpc(Vector3 p_direction, Vector3 p_rotation)
+    void EnvoiePositionRotationClientAuServeurServerRpc(Vector3 p_direction, Vector3 p_rotation, Vector3 p_rotCam)
     {
         transform.Translate(p_direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(p_rotation), 0.3f);
+        //transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(p_rotation), 0.3f);
+        transform.Rotate(p_rotation);
+        m_cam.transform.Rotate(p_rotCam);
+    }
+
+    Vector3 GetRotCam()
+    {
+        float axisY = Input.GetAxis("Mouse Y");
+        Vector3 rotation = new Vector3(-axisY * Time.deltaTime * m_rotSpeed, 0, 0);
+        return rotation;
+    }
+
+    Vector3 GetRotation()
+    {
+        Vector3 rotation = new Vector3(0, Input.GetAxis("Mouse X") * Time.deltaTime * m_rotSpeed, 0);
+        return rotation;
     }
     Vector3 GetDirection()
     {
