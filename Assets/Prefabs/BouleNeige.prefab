@@ -113,10 +113,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 531780f262815d44f93551d34ee5bad7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_vitesseBouleNeige: 15
-  m_direction: {x: 0, y: 0, z: 1}
+  m_vitesseBouleNeige: 1
   PositionBouleNeige:
     m_InternalValue: {x: 0, y: 0, z: 0}
+  m_id: 0
 --- !u!114 &2673661556642714337
 MonoBehaviour:
   m_ObjectHideFlags: 0

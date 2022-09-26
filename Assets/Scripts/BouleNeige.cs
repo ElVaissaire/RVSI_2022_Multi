@@ -30,7 +30,7 @@ public class BouleNeige : NetworkBehaviour
 
         if (collision.gameObject.tag == "Player" && m_id != collision.gameObject.GetComponent<PlayerBehavior>().m_ID)
         {
-            collision.gameObject.GetComponent<PlayerBehavior>().m_vie -= 10;
+            collision.gameObject.GetComponent<PlayerBehavior>().m_networkVie.Value--;
             Destroy(this.gameObject);
         }
 

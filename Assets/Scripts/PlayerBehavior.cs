@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerBehavior : NetworkBehaviour
 {
@@ -11,14 +12,21 @@ public class PlayerBehavior : NetworkBehaviour
     [SerializeField] private GameObject m_snowballPrefab;
     [SerializeField] private Transform  m_snowballSpawn;
 
-    [SerializeField] public int         m_vie = 100;
+    [SerializeField] public Slider      m_healthBar;
+    public NetworkVariable<int>         m_networkVie = new NetworkVariable<int>();
+    public static int                   m_maxVie = 5;
+    [SerializeField] int                m_vie;
 
     private NetworkVariable<int>        m_networkID = new NetworkVariable<int>();
     public int                          m_ID = -1;
 
+    [SerializeField] private GameObject m_cam;
+
     private void Awake()
     {
         m_ID = -1;
+        m_healthBar.maxValue = m_maxVie;
+        m_vie = m_maxVie;
     }
 
     public override void OnNetworkSpawn()
@@ -27,12 +35,17 @@ public class PlayerBehavior : NetworkBehaviour
         {
             m_ID = GameManager.Instance.AddPlayer(gameObject);
             m_networkID.Value = m_ID;
+            m_networkVie.Value = m_maxVie;
         }
         else
         {
             m_ID = m_networkID.Value;
+            m_maxVie = m_networkVie.Value;
             GetComponent<MeshRenderer>().material.color = GameManager.Instance.GetColorByID(m_ID);
         }
+
+        if (!IsOwner)
+            m_cam.SetActive(false);
     }
 
     public override void OnNetworkDespawn()
@@ -60,6 +73,9 @@ public class PlayerBehavior : NetworkBehaviour
 
             LancerBouleNeige();
         }
+
+        m_vie = m_networkVie.Value;
+        m_healthBar.value = m_vie;
 
     }
     
