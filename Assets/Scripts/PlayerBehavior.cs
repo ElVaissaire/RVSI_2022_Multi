@@ -17,8 +17,8 @@ public class PlayerBehavior : NetworkBehaviour
 
     [SerializeField] public Slider          m_healthBar;
     public NetworkVariable<int>             m_networkVie = new NetworkVariable<int>();
-    public static int                       m_maxVie = 5;
-    [SerializeField] int                    m_vie;
+    public static int                              m_maxVie = 5;
+    [SerializeField] public int             m_vie;
 
     private NetworkVariable<int>            m_networkID = new NetworkVariable<int>();
     public int                              m_ID = -1;
@@ -26,6 +26,12 @@ public class PlayerBehavior : NetworkBehaviour
     [SerializeField] private GameObject     m_cam;
 
     [SerializeField] public TextMeshProUGUI m_text;
+
+    public NetworkVariable<bool>            m_networkIsDead = new NetworkVariable<bool>(false);
+    public NetworkVariable<int>             m_networkIdLose = new NetworkVariable<int>(-1);
+
+    
+
     //public NetworkVariable<string> m_networkText = new NetworkVariable<string>();
 
     private void Awake()
@@ -33,10 +39,6 @@ public class PlayerBehavior : NetworkBehaviour
         m_ID = -1;
         m_healthBar.maxValue = m_maxVie;
         m_vie = m_maxVie;
-        //m_text.text = "Player";
-        m_text.SetText("Player");
-        m_text.fontSize = 5;
-        print("Awake " + m_text.text);
     }
 
     public override void OnNetworkSpawn()
@@ -46,20 +48,16 @@ public class PlayerBehavior : NetworkBehaviour
             m_ID = GameManager.Instance.AddPlayer(gameObject);
             m_networkID.Value = m_ID;
             m_networkVie.Value = m_maxVie;
-            //m_networkRotCam.Value = m_rotCam;
-            //m_text.text = "Player" + m_ID.ToString();
-            //m_text.fontSize = 5;
+
         }
         else
         {
             m_ID = m_networkID.Value;
             m_maxVie = m_networkVie.Value;
             GetComponent<MeshRenderer>().material.color = GameManager.Instance.GetColorByID(m_ID);
-            //m_rotCam = m_networkRotCam.Value;
         }
 
-        m_text.SetText("Player_" + m_ID);
-        print("OnNetworkSpawn " + m_text.text);
+        m_text.SetText("Player_" + (m_ID + 1));
 
         if (!IsOwner)
             m_cam.SetActive(false);
@@ -73,7 +71,7 @@ public class PlayerBehavior : NetworkBehaviour
 
     void Update()
     {
-        if(IsOwner)
+        if(IsOwner && m_vie > 0)
         {
             m_direction = GetDirection();
             m_rotation = GetRotationPersonnage();
@@ -94,14 +92,6 @@ public class PlayerBehavior : NetworkBehaviour
                 m_cam.transform.localEulerAngles = new Vector3(rotX, 0.0f, 0.0f);
             }
 
-            /*
-            if ((0.0f <= m_cam.transform.eulerAngles.x && m_cam.transform.eulerAngles.x < (45.0f - m_rotCam.x)) ||
-                (((330.0f - m_rotCam.x) < m_cam.transform.eulerAngles.x && m_cam.transform.eulerAngles.x <= 360.0f)))
-            {
-                m_cam.transform.Rotate(m_rotCam);
-            }//*/
-            print(m_cam.transform.eulerAngles);
-
             if (IsServer)
             {
                 transform.Translate(m_direction * m_vitesse * Time.deltaTime);
@@ -113,10 +103,45 @@ public class PlayerBehavior : NetworkBehaviour
             }
 
             LancerBouleNeige();
+
         }
 
         m_vie = m_networkVie.Value;
         m_healthBar.value = m_vie;
+
+        if(IsOwner && m_vie <=0)
+        {
+            if (m_networkIsDead.Value)
+            {
+                GameManager.Instance.GameOver();
+                if (IsServer)
+                {
+                    transform.position = new Vector3(100.0f, -5.0f, 0.0f);
+                }
+                else
+                {
+                    EnvoiPositionRespawnServerRpc(new Vector3(100.0f, -5.0f, 0.0f));
+                }
+            }
+        }
+    }
+
+    public void Respawn()
+    {
+        if(IsOwner)
+        {
+            m_networkVie.Value = m_maxVie;
+            m_networkIsDead.Value = false;
+            
+            if (IsServer)
+            {
+                transform.position = new Vector3(0.0f, 0.0f, 0.0f);
+            }
+            else
+            {
+                EnvoiPositionRespawnServerRpc(new Vector3(0.0f, 0.0f, 0.0f));
+            }
+        }
     }
     
     [ServerRpc]
@@ -127,6 +152,11 @@ public class PlayerBehavior : NetworkBehaviour
         
     }
 
+    [ServerRpc]
+    void EnvoiPositionRespawnServerRpc(Vector3 p_position)
+    {
+        transform.position = p_position;
+    }
     Vector3 GetRotationCamera()     // Tourner uniquement la caméra pour regarder de haut en bas
     {
         float axisY = Input.GetAxis("Mouse Y");
@@ -175,4 +205,5 @@ public class PlayerBehavior : NetworkBehaviour
         snowball.GetComponent<BouleNeige>().m_id = m_ID;
         snowball.GetComponent<NetworkObject>().Spawn();   // Mettre l'instance de boule de neige sur le serveur pour que le client puisse la voir
     }
+
 }

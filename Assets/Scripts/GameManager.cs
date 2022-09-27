@@ -8,10 +8,11 @@ public class GameManager : NetworkBehaviour
     private GameManager() { }
     public static GameManager Instance { get; private set; }
 
-    private List<GameObject> m_playerList = new List<GameObject>();
-
     private GameObject[] m_playerArray = new GameObject[8];
+    private bool m_isActive = true;
+    private NetworkVariable<bool> m_networkIsActive = new NetworkVariable<bool>(true);
     public Color[] m_playerColor;
+    [SerializeField] private Canvas m_gameOver;
 
     private void Awake()
     {
@@ -24,10 +25,20 @@ public class GameManager : NetworkBehaviour
             m_playerArray[i] = null;
     }
 
+
+    [ServerRpc]
+    void EnvoiIsActiveAuClientServerRPC(bool p_isActive)
+    {
+        if (!p_isActive)
+        {
+            print("Player is dead");
+
+        }
+    }
+
     public int AddPlayer(GameObject p_player)
     {
         int i;
-        Debug.Log("AddPlayer");
 
         for (i = 0; i < 8; i++)
         {
@@ -57,5 +68,37 @@ public class GameManager : NetworkBehaviour
     public void DeletePlayer(int p_id)
     {
         m_playerArray[p_id] = null;
+    }
+
+    public GameObject GetPlayer(int p_id)
+    {
+        if (Mathf.Abs(p_id) > 8)
+            return null;
+
+        return m_playerArray[Mathf.Abs(p_id)];
+    }
+
+   
+
+    public void GameOver()
+    {
+        m_gameOver.gameObject.SetActive(true);
+    }
+    public void PlayAgain()
+    {
+        m_gameOver.gameObject.SetActive(false);
+        //m_playerArray[0].GetComponent<PlayerBehavior>().Respawn();
+        for(int i=0; i<8; i++)
+        {
+            if(m_playerArray[i] != null && m_playerArray[i].GetComponent<PlayerBehavior>().m_networkIsDead.Value == true)
+            {
+                m_playerArray[i].GetComponent<PlayerBehavior>().Respawn();
+            }
+        }
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
     }
 }
