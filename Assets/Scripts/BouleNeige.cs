@@ -31,7 +31,6 @@ public class BouleNeige : NetworkBehaviour
             if(collision.gameObject.GetComponent<PlayerBehavior>().m_networkVie.Value <= 0)
             {
                 collision.gameObject.GetComponent<PlayerBehavior>().m_networkIsDead.Value = true;
-                print("player is dead");
             }
 
             Destroy(this.gameObject);

@@ -1,3 +1,7 @@
+
+Martine NOGUES
+Eléonore VAISSAIRE
+
 Bataille de boules de neiges
 
 Commandes :
@@ -13,5 +17,8 @@ Chaque joueur a 5 vies
 Jeu pour le moment en local
 Jusqu'à 8 joueurs
 
-Martine NOGUES
-Eléonore VAISSAIRE
+
+NOTE : Le host peut rejouer en cliquant sur "Play Again", mais pas le client.
+Le client est bien téléporté loin, en revanche, il ne peut plus revenir en 0,0,0
+(le tableau m_playerArray[] du GameManager reste à null si on est client
+Donc le client n'appelle jamais la fonction Respawn())

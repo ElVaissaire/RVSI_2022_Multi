@@ -15,17 +15,17 @@ public class PlayerBehavior : NetworkBehaviour
     [SerializeField] private GameObject     m_snowballPrefab;
     [SerializeField] private Transform      m_snowballSpawn;
 
-    [SerializeField] public Slider          m_healthBar;
+    [SerializeField] private Slider          m_healthBar;
     public NetworkVariable<int>             m_networkVie = new NetworkVariable<int>();
     public static int                              m_maxVie = 5;
-    [SerializeField] public int             m_vie;
+    [SerializeField] private int             m_vie;
 
-    private NetworkVariable<int>            m_networkID = new NetworkVariable<int>();
+    public NetworkVariable<int>            m_networkID = new NetworkVariable<int>();
     public int                              m_ID = -1;
 
     [SerializeField] private GameObject     m_cam;
 
-    [SerializeField] public TextMeshProUGUI m_text;
+    [SerializeField] private TextMeshProUGUI m_text;
 
     public NetworkVariable<bool>            m_networkIsDead = new NetworkVariable<bool>(false);
     public NetworkVariable<int>             m_networkIdLose = new NetworkVariable<int>(-1);
@@ -77,13 +77,11 @@ public class PlayerBehavior : NetworkBehaviour
             m_rotation = GetRotationPersonnage();
             m_rotCam = GetRotationCamera();
 
-            // La rotation de la caméra est faite en locale, pas besoin de la partagée sur le serveur.
-            // Autoriser la rotation entre 330° et 45°
+            // La rotation de la caméra est faite en local, pas besoin de la partager sur le serveur.
             m_cam.transform.Rotate(m_rotCam, Space.Self);
             if(m_cam.transform.localEulerAngles.x > 45.0f && m_cam.transform.localEulerAngles.x < 325.0f)
             {
                 float rotX;
-
                 if (m_cam.transform.localEulerAngles.x < 180.0f)
                     rotX = 45.0f;
                 else
@@ -120,7 +118,7 @@ public class PlayerBehavior : NetworkBehaviour
                 }
                 else
                 {
-                    EnvoiPositionRespawnServerRpc(new Vector3(100.0f, -5.0f, 0.0f));
+                    MoveServerRpc(new Vector3(100.0f, -5.0f, 0.0f));
                 }
             }
         }
@@ -130,16 +128,15 @@ public class PlayerBehavior : NetworkBehaviour
     {
         if(IsOwner)
         {
-            m_networkVie.Value = m_maxVie;
             m_networkIsDead.Value = false;
-            
+            m_networkVie.Value = m_maxVie;
             if (IsServer)
             {
                 transform.position = new Vector3(0.0f, 0.0f, 0.0f);
             }
             else
             {
-                EnvoiPositionRespawnServerRpc(new Vector3(0.0f, 0.0f, 0.0f));
+                RespawnServerRpc(new Vector3(0.0f, 0.0f, 0.0f));
             }
         }
     }
@@ -149,13 +146,22 @@ public class PlayerBehavior : NetworkBehaviour
     {
         transform.Translate(p_direction);
         transform.Rotate(p_rotation);
-        
+
     }
 
     [ServerRpc]
-    void EnvoiPositionRespawnServerRpc(Vector3 p_position)
+    void MoveServerRpc(Vector3 p_position)
     {
         transform.position = p_position;
+        m_networkIsDead.Value = false;
+    }
+
+    [ServerRpc]
+    void RespawnServerRpc(Vector3 p_position)
+    {
+        transform.position = p_position;
+        m_networkVie.Value = m_maxVie;
+        m_networkIsDead.Value = false;
     }
     Vector3 GetRotationCamera()     // Tourner uniquement la caméra pour regarder de haut en bas
     {

@@ -9,8 +9,6 @@ public class GameManager : NetworkBehaviour
     public static GameManager Instance { get; private set; }
 
     private GameObject[] m_playerArray = new GameObject[8];
-    private bool m_isActive = true;
-    private NetworkVariable<bool> m_networkIsActive = new NetworkVariable<bool>(true);
     public Color[] m_playerColor;
     [SerializeField] private Canvas m_gameOver;
 
@@ -23,17 +21,6 @@ public class GameManager : NetworkBehaviour
 
         for (int i = 0; i < 8; i++)
             m_playerArray[i] = null;
-    }
-
-
-    [ServerRpc]
-    void EnvoiIsActiveAuClientServerRPC(bool p_isActive)
-    {
-        if (!p_isActive)
-        {
-            print("Player is dead");
-
-        }
     }
 
     public int AddPlayer(GameObject p_player)
@@ -86,15 +73,15 @@ public class GameManager : NetworkBehaviour
     }
     public void PlayAgain()
     {
-        m_gameOver.gameObject.SetActive(false);
-        //m_playerArray[0].GetComponent<PlayerBehavior>().Respawn();
-        for(int i=0; i<8; i++)
-        {
-            if(m_playerArray[i] != null && m_playerArray[i].GetComponent<PlayerBehavior>().m_networkIsDead.Value == true)
+       m_gameOver.gameObject.SetActive(false);
+       for (int i = 0; i < 8; i++)
+       {
+            if (m_playerArray[i] != null)
             {
                 m_playerArray[i].GetComponent<PlayerBehavior>().Respawn();
             }
-        }
+       }
+        
     }
 
     public void Quit()
